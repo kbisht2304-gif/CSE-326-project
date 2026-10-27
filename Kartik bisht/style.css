@@ -1,0 +1,54 @@
+/* ===== 1. COLORS =====
+   The page colors are stored in variables. The JavaScript sets data-sky on <body>
+   (sunny / cloudy / rainy / night) and the page changes color by itself. */
+:root { --bg1:#ffd36e; --bg2:#ff9a5a; --ink:#2b1a0e; --card:rgba(255,255,255,.55); --good:#1f9d55; --ok:#e0a100; --bad:#d64545; }
+body[data-sky="cloudy"] { --bg1:#cfd8e3; --bg2:#8c9bb0; --ink:#1c2530; }
+body[data-sky="rainy"]  { --bg1:#6f8fb3; --bg2:#34495e; --ink:#f2f6fa; --card:rgba(20,30,45,.45); }
+body[data-sky="night"]  { --bg1:#27305c; --bg2:#0e1230; --ink:#eef0ff; --card:rgba(255,255,255,.1); }
+
+/* ===== 2. BASIC PAGE ===== */
+* { box-sizing: border-box; margin: 0; }
+body { font-family: system-ui, sans-serif; color: var(--ink); min-height: 100vh; padding: 20px;
+       background: linear-gradient(160deg, var(--bg1), var(--bg2)); transition: background .6s; }
+main { max-width: 760px; margin: 0 auto; }
+.card { background: var(--card); border-radius: 20px; padding: 20px; margin-top: 16px; }
+.back { color: var(--ink); }
+
+/* ===== 3. HOME PAGE ===== */
+.home { display: flex; align-items: center; justify-content: center; text-align: center; }
+.hero h1 { font-size: 3rem; }
+.hero p { margin: 10px 0 20px; }
+.sun { font-size: 5rem; animation: float 3s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-14px); } }   /* moves the sun up and down */
+
+form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+input { padding: 12px 16px; font-size: 1rem; border: 0; border-radius: 12px; width: 280px; }
+button { padding: 12px 20px; font-size: 1rem; border: 0; border-radius: 12px; cursor: pointer;
+         background: var(--ink); color: var(--bg1); }
+button:hover { opacity: .85; }
+
+/* ===== 4. CHIPS (small round buttons and links) ===== */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+.hero .chips { justify-content: center; }
+.chip { padding: 8px 14px; border-radius: 999px; border: 2px solid transparent; font-size: 1rem;
+        background: var(--card); color: var(--ink); text-decoration: none; cursor: pointer; }
+.chip:hover, .chip.active { border-color: var(--ink); }
+
+/* ===== 5. RESULTS PAGE ===== */
+.now { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.temp { font-size: 4rem; font-weight: bold; }
+.outfit { max-width: 240px; }
+.verdict { font-size: 1.5rem; font-weight: bold; margin: 8px 0 14px; }
+
+/* Bars: height = score, color = good / ok / bad (the JavaScript sets both) */
+.bars { display: flex; align-items: flex-end; gap: 4px; height: 140px; overflow-x: auto; }
+.bar { flex: 1; min-width: 26px; border-radius: 8px 8px 4px 4px; color: white; font-size: .7rem;
+       text-align: center; padding-top: 4px; cursor: pointer; }
+.bar.best { outline: 3px solid var(--ink); }
+.hours { display: flex; gap: 4px; font-size: .7rem; margin: 4px 0 10px; }
+.hours span { flex: 1; min-width: 26px; text-align: center; }
+
+.days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; text-align: center; }
+.days b { display: block; font-size: 1.1rem; }
+
+@media (prefers-reduced-motion: reduce) { .sun { animation: none; } }

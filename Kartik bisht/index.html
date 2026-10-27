@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Best Hour - Weather for your plans</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<!-- class="home" tells the CSS this is the home page (it centers everything ) -->
+ <!-- hello -->
+<body class="home" data-sky="sunny">
+
+  <main class="hero">
+    <div class="sun">☀️</div>
+    <h1>Best Hour</h1>
+    <p>Tell us where you are. We will tell you the best time to go outside.</p>
+
+    <!-- No JavaScript needed here: the form sends the text to results.html
+         and target="_blank" opens it in a NEW TAB. -->
+    <form action="results.html" target="_blank">
+      <input type="text" name="city" placeholder="Type a city, state or country" required>
+      <button type="submit">See weather</button>
+    </form>
+
+    <!-- Quick links: each one opens results.html with a ready-made city -->
+    <div class="chips">
+      <a class="chip" href="results.html?city=Delhi" target="_blank">Delhi</a>
+      <a class="chip" href="results.html?city=Tokyo" target="_blank">Tokyo</a>
+      <a class="chip" href="results.html?city=London" target="_blank">London</a>
+      <a class="chip" href="results.html?city=Punjab" target="_blank">Punjab</a>
+      <a class="chip" href="results.html?city=Brazil" target="_blank">Brazil</a>
+    </div>
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather - Best Hour</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-sky="sunny">
+  <main>
+    <a class="back" href="index.html">← Search another place</a>
+
+    <!-- Shows "Loading..." or an error. results.js fills it in. -->
+    <p class="card" id="message">Loading weather...</p>
+
+    <!-- Everything inside #app is hidden until the data arrives -->
+    <div id="app" hidden>
+
+      <!-- Card 1: current weather -->
+      <section class="card now">
+        <div>
+          <h1 id="placeName"></h1>
+          <div class="temp"><span id="icon"></span> <span id="temp"></span></div>
+          <p id="cond"></p>
+          <p id="details"></p>
+        </div>
+        <p class="outfit" id="outfit"></p>
+      </section>
+
+      <!-- Card 2: the unique feature - pick a plan, find the best hour -->
+      <section class="card">
+        <h2>What are you planning today?</h2>
+        <div class="chips" id="chips"></div>
+        <p class="verdict" id="verdict"></p>
+        <div class="bars" id="bars"></div>
+        <div class="hours" id="hours"></div>
+        <p id="picked">Tap a bar to see that hour.</p>
+      </section>
+
+      <!-- Card 3: next 5 days -->
+      <section class="card">
+        <h2>Next 5 days</h2>
+        <div class="days" id="days"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="results.js"></script>
+</body>
+</html>
