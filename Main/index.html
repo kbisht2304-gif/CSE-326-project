@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Best Hour - Weather for your plans</title>
+
+<!-- Optional font. Delete this line if only local files are allowed (the CSS falls back to system-ui). -->
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+
+<!-- Connects the design file. Keep style.css in the same folder as this file. -->
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body data-sky="sunny">
+<main>
+  <header>
+    <h1>Best Hour</h1>
+    <select id="citySelect" aria-label="City"></select>
+  </header>
+
+  <!-- Current weather + what to wear -->
+  <section class="card now">
+    <div>
+      <div class="temp" id="temp">--</div>
+      <div class="cond" id="cond"></div>
+    </div>
+    <p class="outfit" id="outfit"></p>
+  </section>
+
+  <!-- THE UNIQUE FEATURE: pick a plan, the app finds the best hour -->
+  <section class="card">
+    <strong>What are you planning today?</strong>
+    <div class="chips" id="chips"></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="bars" id="bars"></div>
+    <div class="hours" id="hours"></div>
+  </section>
+
+  <section class="card days" id="days" aria-label="5 day forecast"></section>
+</main>
+
+<!-- Connects the logic file. Keep script.js in the same folder as this file. -->
+<script src="script.js"></script>
+</body>
+</html>
