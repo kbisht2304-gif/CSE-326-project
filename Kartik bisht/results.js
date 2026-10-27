@@ -11,9 +11,9 @@ function describe(code) {
   if (code <= 48)  return { text: "Foggy",          icon: "🌫️", sky: "cloudy" };
   if (code <= 57)  return { text: "Drizzle",        icon: "🌦️", sky: "rainy" };
   if (code <= 67)  return { text: "Rain",           icon: "🌧️", sky: "rainy" };
-  if (code <= 77)  return { text: "Snow",           icon: "❄️", sky: "cloudy" };
+  if (code <= 77)  return { text: "Snow",           icon: "❄️", sky: "winter" };
   if (code <= 82)  return { text: "Rain showers",   icon: "🌧️", sky: "rainy" };
-  if (code <= 86)  return { text: "Snow showers",   icon: "❄️", sky: "cloudy" };
+  if (code <= 86)  return { text: "Snow showers",   icon: "❄️", sky: "winter" };
   return             { text: "Thunderstorm",    icon: "⛈️", sky: "rainy" };
 }
 
@@ -106,8 +106,10 @@ function showWeather(place, data) {
   const info = describe(now.weather_code);
   const localHour = Number(now.time.slice(11, 13));
 
-  // Page color: night after 7 PM / before 6 AM in that place, else by weather
-  document.body.dataset.sky = (localHour >= 19 || localHour < 6) ? "night" : info.sky;
+  // Page color: "winter" if it is cold (10°C or below) or snowing, else by weather.
+  // Change the 10 below if you want a different "cold" limit.
+  const isCold = now.temperature_2m <= 10;
+  document.body.dataset.sky = (isCold || info.sky === "winter") ? "winter" : info.sky;
 
   const where = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
   document.title = "Weather in " + place.name;

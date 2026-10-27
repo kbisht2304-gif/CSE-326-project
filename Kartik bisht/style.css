@@ -1,40 +1,74 @@
 /* ===== 1. COLORS =====
-   The page colors are stored in variables. The JavaScript sets data-sky on <body>
-   (sunny / cloudy / rainy / night) and the page changes color by itself. */
-:root { --bg1:#ffd36e; --bg2:#ff9a5a; --ink:#2b1a0e; --card:rgba(255,255,255,.55); --good:#1f9d55; --ok:#e0a100; --bad:#d64545; }
+   The JavaScript sets data-sky on <body> (sunny / cloudy / rainy / winter)
+   and the colors below change by themselves. */
+:root { --bg1:#ffd36e; --bg2:#ff9a5a; --ink:#2b1a0e; --card:rgba(255,255,255,.55); --good:#1f9d55; --ok:#e0a100; --bad:#d64545; --gif:none; }
 body[data-sky="cloudy"] { --bg1:#cfd8e3; --bg2:#8c9bb0; --ink:#1c2530; }
-body[data-sky="rainy"]  { --bg1:#6f8fb3; --bg2:#34495e; --ink:#f2f6fa; --card:rgba(20,30,45,.45); }
-body[data-sky="night"]  { --bg1:#27305c; --bg2:#0e1230; --ink:#eef0ff; --card:rgba(255,255,255,.1); }
+body[data-sky="rainy"]  { --bg1:#6f8fb3; --bg2:#34495e; --ink:#f2f6fa; --card:rgba(20,30,45,.55); }
+body[data-sky="winter"] { --bg1:#e3f4ff; --bg2:#7fb6e6; --ink:#0f2a43; --card:rgba(255,255,255,.6); }  /* icy blue */
 
-/* ===== 2. BASIC PAGE ===== */
+/* ===== 2. BACKGROUND GIFS (YOUR PART) =====
+   Each sky has a "--gif" line below. To add an animated background:
+   1. Put your .gif file inside the "images" folder.
+   2. Replace "none" with url("images/yourfile.gif")  (see the examples in the comments).
+   If the line stays "none", the colored gradient is shown instead, so nothing breaks. */
+body[data-sky="sunny"]  { --gif: url("background.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/sunny.gif") */
+body[data-sky="cloudy"] { --gif: url("cloudy.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/cloudy.gif") */
+body[data-sky="rainy"]  { --gif: url("rain.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/rainy.gif") */
+body[data-sky="winter"]  { --gif: url("winter.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/winter.gif") */
+/* The home page rule must stay LAST, so it wins over the sky rules above. */
+body.home[data-sky]             { --gif: url("background2.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/home.gif") */
+
+/* ===== 3. BASIC PAGE ===== */
 * { box-sizing: border-box; margin: 0; }
 body { font-family: system-ui, sans-serif; color: var(--ink); min-height: 100vh; padding: 20px;
-       background: linear-gradient(160deg, var(--bg1), var(--bg2)); transition: background .6s; }
+       /* the gif goes on top, the gradient is the backup underneath */
+       background-image: var(--gif), linear-gradient(160deg, var(--bg1), var(--bg2));
+       background-size: cover; background-position: center; background-attachment: fixed;
+       transition: background .6s; }
 main { max-width: 760px; margin: 0 auto; }
-.card { background: var(--card); border-radius: 20px; padding: 20px; margin-top: 16px; }
-.back { color: var(--ink); }
+.card { background: var(--card); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; margin-top: 16px; }
 
-/* ===== 3. HOME PAGE ===== */
-.home { display: flex; align-items: center; justify-content: center; text-align: center; }
-.hero h1 { font-size: 3rem; }
-.hero p { margin: 10px 0 20px; }
+/* ===== 4. HOME PAGE ===== */
+.home main { padding-top: 6vh; }
+.hero { text-align: center; padding: 36px 20px; border-radius: 28px;
+        background: var(--card); backdrop-filter: blur(12px); }
+.hero h1 { font-size: 3.2rem; }
+.hero p { margin: 10px 0 24px; font-size: 1.1rem; }
 .sun { font-size: 5rem; animation: float 3s ease-in-out infinite; }
-@keyframes float { 50% { transform: translateY(-14px); } }   /* moves the sun up and down */
 
 form { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-input { padding: 12px 16px; font-size: 1rem; border: 0; border-radius: 12px; width: 280px; }
-button { padding: 12px 20px; font-size: 1rem; border: 0; border-radius: 12px; cursor: pointer;
-         background: var(--ink); color: var(--bg1); }
-button:hover { opacity: .85; }
+input { padding: 14px 20px; font-size: 1.05rem; border: 0; border-radius: 999px; width: 320px;
+        max-width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+input:focus { outline: 3px solid var(--ink); }
+button { padding: 14px 26px; font-size: 1.05rem; border: 0; border-radius: 999px; cursor: pointer;
+         background: var(--ink); color: var(--bg1); transition: transform .2s; }
+button:hover { transform: scale(1.06); }
 
-/* ===== 4. CHIPS (small round buttons and links) ===== */
+/* three small info cards */
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; text-align: center; }
+.features .card { margin-top: 0; transition: transform .2s; }
+.features .card:hover { transform: translateY(-6px); }
+.features span { font-size: 2rem; }
+.features h3 { margin: 6px 0; }
+.features p { font-size: .9rem; }
+
+/* drifting clouds */
+.cloud { position: fixed; font-size: 4rem; left: -10%; opacity: .8; animation: drift 30s linear infinite; }
+.cloud1 { top: 8%; }
+.cloud2 { top: 55%; font-size: 3rem; animation-duration: 45s; animation-delay: -15s; }
+
+/* ===== 5. ANIMATIONS ===== */
+@keyframes float { 50% { transform: translateY(-14px); } }       /* sun goes up and down */
+@keyframes drift { to { transform: translateX(130vw); } }        /* cloud moves across */
+
+/* ===== 6. CHIPS (small round buttons and links) ===== */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
-.hero .chips { justify-content: center; }
+.hero .chips { justify-content: center; margin-bottom: 0; }
 .chip { padding: 8px 14px; border-radius: 999px; border: 2px solid transparent; font-size: 1rem;
         background: var(--card); color: var(--ink); text-decoration: none; cursor: pointer; }
 .chip:hover, .chip.active { border-color: var(--ink); }
 
-/* ===== 5. RESULTS PAGE ===== */
+/* ===== 7. RESULTS PAGE ===== */
 .now { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .temp { font-size: 4rem; font-weight: bold; }
 .outfit { max-width: 240px; }
@@ -51,4 +85,22 @@ button:hover { opacity: .85; }
 .days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; text-align: center; }
 .days b { display: block; font-size: 1.1rem; }
 
-@media (prefers-reduced-motion: reduce) { .sun { animation: none; } }
+/* ===== 8. SMALL SCREENS + REDUCED MOTION ===== */
+@media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .sun, .cloud { animation: none; } }
+
+/* ===== 9. BACKGROUND VIDEO (home page) ===== */
+.bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+.video-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .25); z-index: -1; }
+
+/* ===== 10. BACK BUTTON (results page) ===== */
+.back { display: inline-block; padding: 10px 18px; border-radius: 999px; text-decoration: none;
+        color: var(--ink); background: var(--card); backdrop-filter: blur(10px);
+        border: 2px solid transparent; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.back .arrow { display: inline-block; transition: transform .2s; }
+.back:hover { transform: translateY(-3px); border-color: var(--ink); box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+.back:hover .arrow { transform: translateX(-6px); }   /* the arrow slides left */
+.back:active { transform: scale(.95); }               /* small press effect when clicked */
+.back:focus-visible { outline: 3px solid var(--ink); }
+
+@media (prefers-reduced-motion: reduce) { .bg-video { display: none; } }
