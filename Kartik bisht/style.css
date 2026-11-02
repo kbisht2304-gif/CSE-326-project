@@ -16,7 +16,7 @@ body[data-sky="cloudy"] { --gif: url("cloudy.gif"); }  /* PASTE YOUR GIF HERE, e
 body[data-sky="rainy"]  { --gif: url("rain.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/rainy.gif") */
 body[data-sky="winter"]  { --gif: url("winter.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/winter.gif") */
 /* The home page rule must stay LAST, so it wins over the sky rules above. */
-body.home[data-sky]             { --gif: url("background2.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/home.gif") */
+body.home[data-sky]             { --gif: url("cosmic_luxury_animated.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/home.gif") */
 
 /* ===== 3. BASIC PAGE ===== */
 * { box-sizing: border-box; margin: 0; }
