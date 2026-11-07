@@ -4,13 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Weather - Best Hour</title>
+  <meta name="description" content="Current weather, the best hour for your plan, and a 5-day forecast.">
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body data-sky="sunny">
-  <main>
-    <a class="back" href="index.html"><span class="arrow">←</span> Search another place</a>
+  <header>
+    <nav>
+      <a class="back" href="index.html"><span class="arrow">←</span> Search another place</a>
+    </nav>
+  </header>
 
+  <main>
     <!-- Shows "Loading..." or an error. results.js fills it in. -->
     <p class="card" id="message">Loading weather...</p>
 
@@ -46,6 +51,8 @@
 
     </div>
   </main>
+
+  <footer>Internet Programming project</footer>
 
   <script src="results.js"></script>
 </body>

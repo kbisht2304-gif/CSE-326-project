@@ -4,52 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Best Hour - Weather for your plans</title>
+  <meta name="description" content="Live weather for any place, plus the best hour of the day for your walk, run, picnic or cricket game.">
   <link rel="stylesheet" href="style.css">
 </head>
-
-<!-- class="home" tells the CSS this is the home page -->
+<!-- hallo -->
+<!-- class="home" tells the CSS and the JavaScript that this is the home page -->
 <body class="home" data-sky="sunny">
 
-  <!-- BACKGROUND VIDEO (YOUR PART)
-       1. Put your video in the "images" folder and name it home.mp4
-          (or change the name in src below).
-       2. autoplay + muted + loop + playsinline = plays by itself, silently, forever.
-       If the file is missing, the colored background is shown instead. -->
-  <video class="bg-video" autoplay muted loop playsinline>
+  <!-- BACKGROUND VIDEO: put your video at images/home.mp4 (plays silently on a loop) -->
+  <video class="bg-video" autoplay muted loop>
     <source src="images/home.mp4" type="video/mp4">
   </video>
   <div class="video-overlay"></div>   <!-- a light dark layer so the text is easy to read -->
 
-
-  <!-- Two clouds that slowly drift across the screen (animated in CSS) -->
-  <div class="cloud cloud1">☁️</div>
-  <div class="cloud cloud2">☁️</div>
-
   <main>
-    <!-- Main glass card -->
     <section class="hero">
-      <div class="sun">☀️</div>
-      <h1>Best Hour</h1>
-      <p>Don't just check the weather. Find the best time for your plan.</p>
+      <header>
+        <div class="sun">☀️</div>
+        <h1>Best Hour</h1>
+        <p>Don't just check the weather. Find the best time for your plan.</p>
+      </header>
 
-      <!-- The form sends the text to results.html in the SAME tab. -->
-      <form action="results.html">
+      <!-- No "action" here: results.js saves the place and opens results.html -->
+      <form id="searchForm">
         <input type="text" name="city" placeholder="Search a city, state or country" required>
         <button type="submit">Search</button>
       </form>
 
-      <!-- Quick links: each one opens results.html with a ready-made place -->
-      <div class="chips">
-        <a class="chip" href="results.html?city=Delhi">Delhi</a>
-        <a class="chip" href="results.html?city=Tokyo">Tokyo</a>
-        <a class="chip" href="results.html?city=London">London</a>
-        <a class="chip" href="results.html?city=Punjab">Punjab</a>
-        <a class="chip" href="results.html?city=Brazil">Brazil</a>
-        <a class="chip" href="results.html?city=Reykjavik">Reykjavik ❄️</a>
+      <!-- Quick links (navigation) -->
+      <nav class="chips">
+        <a class="chip" href="results.html">Delhi</a>
+        <a class="chip" href="results.html">Tokyo</a>
+        <a class="chip" href="results.html">London</a>
+        <a class="chip" href="results.html">Punjab</a>
+        <a class="chip" href="results.html">Brazil</a>
+        <a class="chip" href="results.html">Reykjavik</a>
+      </nav>
+
+      <!-- Geolocation API: uses the device's location -->
+      <div class="location">
+        <button type="button" class="chip" id="locationBtn">📍 Use my location</button>
+        <p id="locationMsg"></p>
       </div>
     </section>
 
-    <!-- Three small cards that explain what the app does -->
     <section class="features">
       <div class="card">
         <span>🌡️</span>
@@ -69,5 +67,8 @@
     </section>
   </main>
 
+  <footer>Internet Programming project</footer>
+
+  <script src="results.js"></script>
 </body>
 </html>

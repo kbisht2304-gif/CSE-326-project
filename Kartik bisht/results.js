@@ -1,6 +1,9 @@
-/* ============ 1. READ THE PLACE FROM THE URL ============
-   The home page opens results.html?city=Tokyo. This reads the "Tokyo" part. */
-const searchText = new URLSearchParams(window.location.search).get("city");
+/* ============ results.js (used by BOTH pages) ============
+   1. Shortcut        2. Weather codes     3. Getting the weather (fetch + cache)
+   4. Hour scoring    5. Draw the page     6. Results page    7. Home page    8. Start */
+
+/* ============ 1. SHORTCUT ============ */
+const $ = id => document.getElementById(id);   // $("temp") is shorter than document.getElementById("temp")
 
 /* ============ 2. TURN A WEATHER CODE INTO TEXT + EMOJI ============
    The weather service sends a number (0 = clear, 61 = rain ...). */
@@ -17,25 +20,129 @@ function describe(code) {
   return             { text: "Thunderstorm",    icon: "⛈️", sky: "rainy" };
 }
 
-/* ============ 3. GET REAL WEATHER FROM THE INTERNET ============
+/* ============ 3. GETTING THE WEATHER ============
    Open-Meteo is a free weather service (no key needed).
-   Step A: turn the place name into latitude/longitude ("geocoding").
-   Step B: ask for the weather at that latitude/longitude.
-   "async/await" means: wait here until the internet answers. */
-async function getWeather(name) {
-  const geoUrl = "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + encodeURIComponent(name);
-  const geo = await (await fetch(geoUrl)).json();
-  if (!geo.results) throw new Error("not found");
-  const place = geo.results[0];
+   fetch() asks the internet. .then() means "when the answer arrives, run this function"
+   (that is a callback). .catch() runs if something goes wrong. */
+const CACHE_MINUTES = 10;
 
+/* Fix what the user typed: "  nEW   yORK " -> "New York" */
+function cleanName(text) {
+  return text.trim().replace(/\s+/g, " ");          // remove extra spaces
+}
+function capitalizeWords(text) {
+  const words = text.toLowerCase().split(" ");
+  const result = [];
+  for (let i = 0; i < words.length; i++) {
+    result.push(words[i].charAt(0).toUpperCase() + words[i].slice(1));   // capital first letter
+  }
+  return result.join(" ");
+}
+
+/* Cache = saved answers in localStorage, so searching the same place again is instant */
+function cacheKey(name) { return "weather:" + cleanName(name).toLowerCase(); }
+
+function readCache(name) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(cacheKey(name)));
+    if (saved && Date.now() - saved.time < CACHE_MINUTES * 60000) return saved.result;
+  } catch (error) { /* nothing saved, ignore */ }
+  return null;
+}
+function writeCache(name, result) {
+  try { localStorage.setItem(cacheKey(name), JSON.stringify({ time: Date.now(), result: result })); }
+  catch (error) { /* ignore */ }
+}
+
+/* Remove old saved answers so localStorage never fills up */
+function cleanCache() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("weather:")) {
+        const saved = JSON.parse(localStorage.getItem(key));
+        if (!saved || Date.now() - saved.time >= CACHE_MINUTES * 60000) { localStorage.removeItem(key); }
+      }
+    }
+  } catch (error) { /* ignore */ }
+}
+
+/* A place never moves, so we remember where it is FOREVER. Next time we skip step A completely. */
+function readPlace(name) {
+  try { return JSON.parse(localStorage.getItem("place:" + cleanName(name).toLowerCase())); }
+  catch (error) { return null; }
+}
+function writePlace(name, place) {
+  try { localStorage.setItem("place:" + cleanName(name).toLowerCase(), JSON.stringify(place)); }
+  catch (error) { /* ignore */ }
+}
+
+/* Step A: place name -> latitude/longitude. Tries the names in the list one by one. */
+function findPlace(names, index, callback) {
+  if (index >= names.length) { callback(null); return; }          // nothing found
+  const url = "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + names[index].replace(/ /g, "%20");
+  fetch(url)
+    .then(response => response.json())
+    .then(geo => {
+      if (geo.results) { callback(geo.results[0]); }
+      else { findPlace(names, index + 1, callback); }             // try the next spelling
+    })
+    .catch(() => callback(null));
+}
+
+/* Step B: latitude/longitude -> weather */
+function loadForecast(place, callback, onError) {
   const url = "https://api.open-meteo.com/v1/forecast?latitude=" + place.latitude +
     "&longitude=" + place.longitude +
-    "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code" +
+    "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day" +
     "&hourly=temperature_2m,precipitation_probability,wind_speed_10m" +
     "&daily=weather_code,temperature_2m_max,temperature_2m_min" +
     "&forecast_days=5&timezone=auto";
-  const data = await (await fetch(url)).json();
-  return { place, data };
+  fetch(url)
+    .then(response => response.json())
+    .then(data => callback({ place: place, data: data }))
+    .catch(onError);
+}
+
+/* Weather for a typed place name */
+function getWeather(name, callback, onError) {
+  const cached = readCache(name);
+  if (cached) { callback(cached); return; }                       // instant!
+
+  // Already know where this place is? Skip the first trip to the internet.
+  const knownPlace = readPlace(name);
+  if (knownPlace) { loadAndSave(name, knownPlace, callback, onError); return; }
+
+  const clean = cleanName(name);
+  const capital = capitalizeWords(clean);
+  const names = [capital];
+  if (clean !== capital) { names.push(clean); }                   // second try: exactly as typed
+
+  findPlace(names, 0, function (place) {
+    if (!place) { onError(); return; }
+    writePlace(name, place);
+    loadAndSave(name, place, callback, onError);
+  });
+}
+
+/* Get the forecast, save it for 10 minutes, then hand it back */
+function loadAndSave(name, place, callback, onError) {
+  loadForecast(place, function (result) {
+    writeCache(name, result);
+    callback(result);
+  }, onError);
+}
+
+/* Weather for the device's location (Geolocation API gives latitude and longitude) */
+function getWeatherByCoords(lat, lon, callback, onError) {
+  loadForecast({ name: "Your location", latitude: lat, longitude: lon }, callback, onError);
+}
+
+/* Start loading early, so the answer is waiting when the user presses Search */
+function prefetchWeather(name) {
+  if (cleanName(name).length >= 3 && !readCache(name)) {
+    getWeather(name, function () {}, function () {});
+  }
 }
 
 /* Keep only today's hours between 6 AM and 10 PM (in that place's own time). */
@@ -94,22 +201,27 @@ function formatHour(h, short) {            // 14 -> "2 PM"  (short: "2p")
   return short ? hr + suffix[0].toLowerCase() : hr + " " + suffix;
 }
 
-/* ============ 5. SHORTCUTS + STATE ============ */
-const $ = id => document.getElementById(id);   // $("temp") is shorter than document.getElementById("temp")
+/* ============ 5. DRAW THE PAGE ============ */
 let hours = [];                                // today's hourly data
 let scored = [];                               // the same hours, with scores added
 let currentActivity = "Walk";
 
-/* ============ 6. DRAW THE PAGE ============ */
 function showWeather(place, data) {
   const now = data.current;
   const info = describe(now.weather_code);
   const localHour = Number(now.time.slice(11, 13));
 
-  // Page color: "winter" if it is cold (10°C or below) or snowing, else by weather.
-  // Change the 10 below if you want a different "cold" limit.
+  // Page theme. The FIRST rule that matches wins:
+  // 1. NIGHT  - it is dark AND the weather is calm (code 0 = clear, 1 = mainly clear)
+  // 2. WINTER - cold (10°C or below) or snowing
+  // 3. otherwise the theme that matches the weather (sunny / cloudy / rainy)
+  const isNight = now.is_day === 0;
+  const isCalm = now.weather_code <= 1;
   const isCold = now.temperature_2m <= 10;
-  document.body.dataset.sky = (isCold || info.sky === "winter") ? "winter" : info.sky;
+  let sky = info.sky;
+  if (isNight && isCalm) { sky = "night"; info.icon = "🌙"; info.text = "Clear night"; }
+  else if (isCold || info.sky === "winter") { sky = "winter"; }
+  document.body.dataset.sky = sky;
 
   const where = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
   document.title = "Weather in " + place.name;
@@ -133,7 +245,7 @@ function showWeather(place, data) {
 
 function drawPlanner() {
   const act = ACTIVITIES[currentActivity];
-  scored = hours.map(h => ({ ...h, score: score(h, act) }));
+  scored = hours.map(h => ({ hour: h.hour, temp: h.temp, rain: h.rain, wind: h.wind, score: score(h, act) }));
   const best = scored.reduce((a, b) => (b.score > a.score ? b : a));
   const hasBest = best.score >= 35;
 
@@ -152,38 +264,101 @@ function drawPlanner() {
   document.querySelectorAll("#chips .chip").forEach(c => c.classList.toggle("active", c.textContent === currentActivity));
 }
 
-/* ============ 7. CLICKS ============ */
-Object.keys(ACTIVITIES).forEach(name => {            // make one button per activity
-  const b = document.createElement("button");
-  b.className = "chip";
-  b.textContent = name;
-  b.addEventListener("click", () => { currentActivity = name; drawPlanner(); });
-  $("chips").appendChild(b);
-});
+/* ============ 6. RESULTS PAGE ============ */
+function setupResultsPage() {
+  Object.keys(ACTIVITIES).forEach(name => {            // make one button per activity
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = name;
+    b.addEventListener("click", () => { currentActivity = name; drawPlanner(); });
+    $("chips").appendChild(b);
+  });
 
-$("bars").addEventListener("click", e => {           // tap a bar -> show that hour's details
-  const bar = e.target.closest(".bar");
-  if (!bar) return;
-  const h = scored[bar.dataset.i];
-  $("picked").textContent = formatHour(h.hour) + ": " + h.temp + "°C, " + h.rain + "% rain, wind " + h.wind + " km/h";
-});
+  $("bars").addEventListener("click", e => {           // tap a bar -> show that hour's details
+    const bar = e.target.closest(".bar");
+    if (!bar) return;
+    const h = scored[bar.dataset.i];
+    $("picked").textContent = formatHour(h.hour) + ": " + h.temp + "°C, " + h.rain + "% rain, wind " + h.wind + " km/h";
+  });
 
-/* ============ 8. START ============ */
-async function start() {
-  if (!searchText) {
-    $("message").textContent = "No place was given. Go back and type a city, state or country.";
-    return;
-  }
-  try {
-    const { place, data } = await getWeather(searchText);
-    hours = todaysHours(data);
-    showWeather(place, data);
-    drawPlanner();
-    $("message").hidden = true;      // hide "Loading..."
-    $("app").hidden = false;         // show the weather
-  } catch (error) {
-    $("message").textContent = "Could not find weather for \"" + searchText +
-      "\". Check the spelling and your internet connection, then try again.";
-  }
+  // Read what the home page saved in sessionStorage, then load the weather
+  const lat = sessionStorage.getItem("lat");
+  const lon = sessionStorage.getItem("lon");
+  const city = sessionStorage.getItem("city");
+
+  if (lat && lon) { getWeatherByCoords(lat, lon, showEverything, showError); }
+  else if (city)  { getWeather(city, showEverything, showError); }
+  else { $("message").textContent = "No place was given. Go back and search for a place."; }
 }
-start();
+
+function showEverything(result) {
+  hours = todaysHours(result.data);
+  showWeather(result.place, result.data);
+  drawPlanner();
+  $("message").hidden = true;      // hide "Loading..."
+  $("app").hidden = false;         // show the weather
+}
+
+function showError() {
+  $("message").textContent = "Could not get the weather. Check the spelling and your internet connection, then try again.";
+}
+
+/* ============ 7. HOME PAGE ============ */
+/* Save the place for the next page, then open it (sessionStorage lasts while the tab is open) */
+function goToCity(name) {
+  sessionStorage.setItem("city", name);
+  sessionStorage.removeItem("lat");
+  sessionStorage.removeItem("lon");
+  window.location.href = "results.html";
+}
+
+/* Geolocation API: getCurrentPosition(successFunction, errorFunction) */
+function useMyLocation() {
+  const msg = $("locationMsg");
+  if (!navigator.geolocation) { msg.textContent = "Your browser does not support location."; return; }
+  msg.textContent = "Finding your location...";
+  navigator.geolocation.getCurrentPosition(
+    function (position) {                                   // success
+      sessionStorage.setItem("lat", position.coords.latitude);
+      sessionStorage.setItem("lon", position.coords.longitude);
+      sessionStorage.removeItem("city");
+      window.location.href = "results.html";
+    },
+    function () {                                           // error (for example: permission denied)
+      msg.textContent = "Could not get your location. Please type a place instead.";
+    }
+  );
+}
+
+function setupHomePage() {
+  const input = document.querySelector("input[name=city]");
+
+  $("searchForm").addEventListener("submit", function (event) {
+    event.preventDefault();                                 // stop the normal form sending
+    goToCity(input.value);
+  });
+
+  input.addEventListener("change", function () { prefetchWeather(input.value); });   // head start
+
+  document.querySelectorAll("nav .chip").forEach(chip => {
+    chip.addEventListener("mouseenter", () => prefetchWeather(chip.textContent));   // head start (mouse)
+    chip.addEventListener("focus", () => prefetchWeather(chip.textContent));        // head start (keyboard)
+    chip.addEventListener("touchstart", () => prefetchWeather(chip.textContent));   // head start (phone)
+    chip.addEventListener("click", event => {
+      event.preventDefault();
+      goToCity(chip.textContent);
+    });
+  });
+
+  $("locationBtn").addEventListener("click", useMyLocation);
+}
+
+/* ============ 8. WHICH PAGE ARE WE ON? ============
+   Both pages load this same file. <body class="home"> is the home page. */
+cleanCache();   // remove old saved answers
+
+if (document.body.classList.contains("home")) {
+  setupHomePage();
+} else {
+  setupResultsPage();
+}

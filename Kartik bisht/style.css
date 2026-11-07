@@ -1,10 +1,11 @@
 /* ===== 1. COLORS =====
-   The JavaScript sets data-sky on <body> (sunny / cloudy / rainy / winter)
+   The JavaScript sets data-sky on <body> (sunny / cloudy / rainy / winter / night)
    and the colors below change by themselves. */
 :root { --bg1:#ffd36e; --bg2:#ff9a5a; --ink:#2b1a0e; --card:rgba(255,255,255,.55); --good:#1f9d55; --ok:#e0a100; --bad:#d64545; --gif:none; }
 body[data-sky="cloudy"] { --bg1:#cfd8e3; --bg2:#8c9bb0; --ink:#1c2530; }
 body[data-sky="rainy"]  { --bg1:#6f8fb3; --bg2:#34495e; --ink:#f2f6fa; --card:rgba(20,30,45,.55); }
 body[data-sky="winter"] { --bg1:#e3f4ff; --bg2:#7fb6e6; --ink:#0f2a43; --card:rgba(255,255,255,.6); }  /* icy blue */
+body[data-sky="night"]  { --bg1:#27305c; --bg2:#0e1230; --ink:#eef0ff; --card:rgba(255,255,255,.15); }
 
 /* ===== 2. BACKGROUND GIFS (YOUR PART) =====
    Each sky has a "--gif" line below. To add an animated background:
@@ -15,6 +16,7 @@ body[data-sky="sunny"]  { --gif: url("background.gif"); }  /* PASTE YOUR GIF HER
 body[data-sky="cloudy"] { --gif: url("cloudy.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/cloudy.gif") */
 body[data-sky="rainy"]  { --gif: url("rain.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/rainy.gif") */
 body[data-sky="winter"]  { --gif: url("winter.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/winter.gif") */
+body[data-sky="night"]  { --gif: url("night2.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("night.gif") */
 /* The home page rule must stay LAST, so it wins over the sky rules above. */
 body.home[data-sky]             { --gif: url("cosmic_luxury_animated.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/home.gif") */
 
@@ -23,15 +25,14 @@ body.home[data-sky]             { --gif: url("cosmic_luxury_animated.gif"); }  /
 body { font-family: system-ui, sans-serif; color: var(--ink); min-height: 100vh; padding: 20px;
        /* the gif goes on top, the gradient is the backup underneath */
        background-image: var(--gif), linear-gradient(160deg, var(--bg1), var(--bg2));
-       background-size: cover; background-position: center; background-attachment: fixed;
-       transition: background .6s; }
+       background-size: cover; background-position: center; }
 main { max-width: 760px; margin: 0 auto; }
-.card { background: var(--card); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; margin-top: 16px; }
+.card { background: var(--card); border-radius: 20px; padding: 20px; margin-top: 16px; }
 
 /* ===== 4. HOME PAGE ===== */
 .home main { padding-top: 6vh; }
 .hero { text-align: center; padding: 36px 20px; border-radius: 28px;
-        background: var(--card); backdrop-filter: blur(12px); }
+        background: var(--card); }
 .hero h1 { font-size: 3.2rem; }
 .hero p { margin: 10px 0 24px; font-size: 1.1rem; }
 .sun { font-size: 5rem; animation: float 3s ease-in-out infinite; }
@@ -52,14 +53,8 @@ button:hover { transform: scale(1.06); }
 .features h3 { margin: 6px 0; }
 .features p { font-size: .9rem; }
 
-/* drifting clouds */
-.cloud { position: fixed; font-size: 4rem; left: -10%; opacity: .8; animation: drift 30s linear infinite; }
-.cloud1 { top: 8%; }
-.cloud2 { top: 55%; font-size: 3rem; animation-duration: 45s; animation-delay: -15s; }
-
 /* ===== 5. ANIMATIONS ===== */
 @keyframes float { 50% { transform: translateY(-14px); } }       /* sun goes up and down */
-@keyframes drift { to { transform: translateX(130vw); } }        /* cloud moves across */
 
 /* ===== 6. CHIPS (small round buttons and links) ===== */
 .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
@@ -87,20 +82,30 @@ button:hover { transform: scale(1.06); }
 
 /* ===== 8. SMALL SCREENS + REDUCED MOTION ===== */
 @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
-@media (prefers-reduced-motion: reduce) { .sun, .cloud { animation: none; } }
 
 /* ===== 9. BACKGROUND VIDEO (home page) ===== */
-.bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
-.video-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .25); z-index: -1; }
+.bg-video { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+.video-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, .25); z-index: -1; }
 
 /* ===== 10. BACK BUTTON (results page) ===== */
 .back { display: inline-block; padding: 10px 18px; border-radius: 999px; text-decoration: none;
-        color: var(--ink); background: var(--card); backdrop-filter: blur(10px);
+        color: var(--ink); background: var(--card);
         border: 2px solid transparent; transition: transform .2s, border-color .2s, box-shadow .2s; }
 .back .arrow { display: inline-block; transition: transform .2s; }
 .back:hover { transform: translateY(-3px); border-color: var(--ink); box-shadow: 0 6px 16px rgba(0,0,0,.2); }
 .back:hover .arrow { transform: translateX(-6px); }   /* the arrow slides left */
 .back:active { transform: scale(.95); }               /* small press effect when clicked */
-.back:focus-visible { outline: 3px solid var(--ink); }
+.back:focus { outline: 3px solid var(--ink); }
 
-@media (prefers-reduced-motion: reduce) { .bg-video { display: none; } }
+/* ===== 11. EXTRAS ===== */
+/* Pseudo-element: draws a small line under the home page title */
+.hero h1::after { content: ""; display: block; width: 60px; height: 4px; margin: 10px auto 0;
+                  background: var(--ink); border-radius: 4px; }
+#locationMsg { margin: 8px 0 0; font-size: .9rem; }
+footer { text-align: center; margin-top: 24px; font-size: .85rem; }
+header nav { max-width: 760px; margin: 0 auto; }
+/* ===== 12. "USE MY LOCATION" BUTTON =====
+   It sits in its own box (.location) with space above it, so it never touches the quick links. */
+.location { margin-top: 20px; text-align: center; clear: both; }
+.location .chip { display: inline-block; }
+#locationMsg { min-height: 1.4em; }   /* keeps space reserved so the page does not jump when a message appears */
