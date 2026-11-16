@@ -28,6 +28,11 @@
       <!-- No "action" here: results.js saves the place and opens results.html -->
       <form id="searchForm">
         <input type="text" name="city" placeholder="Search a city, state or country" required>
+        <select id="unitSelect" aria-label="Temperature unit">
+          <option value="C">°C Celsius</option>
+          <option value="F">°F Fahrenheit</option>
+          <option value="K">K Kelvin</option>
+        </select>
         <button type="submit">Search</button>
       </form>
 

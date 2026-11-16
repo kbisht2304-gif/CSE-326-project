@@ -6,6 +6,7 @@ body[data-sky="cloudy"] { --bg1:#cfd8e3; --bg2:#8c9bb0; --ink:#1c2530; }
 body[data-sky="rainy"]  { --bg1:#6f8fb3; --bg2:#34495e; --ink:#f2f6fa; --card:rgba(20,30,45,.55); }
 body[data-sky="winter"] { --bg1:#e3f4ff; --bg2:#7fb6e6; --ink:#0f2a43; --card:rgba(255,255,255,.6); }  /* icy blue */
 body[data-sky="night"]  { --bg1:#27305c; --bg2:#0e1230; --ink:#eef0ff; --card:rgba(255,255,255,.15); }
+body[data-sky="error"]  { --bg1:#ece6fa; --bg2:#a495cf; --ink:#2a2140; --card:rgba(255,255,255,.65); }  /* soft purple */
 
 /* ===== 2. BACKGROUND GIFS (YOUR PART) =====
    Each sky has a "--gif" line below. To add an animated background:
@@ -17,6 +18,7 @@ body[data-sky="cloudy"] { --gif: url("cloudy.gif"); }  /* PASTE YOUR GIF HERE, e
 body[data-sky="rainy"]  { --gif: url("rain.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/rainy.gif") */
 body[data-sky="winter"]  { --gif: url("winter.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/winter.gif") */
 body[data-sky="night"]  { --gif: url("night2.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("night.gif") */
+body[data-sky="error"]  { --gif: none; --error-gif: none; }  /* PASTE YOUR ERROR GIF HERE, e.g. --error-gif: url("error.gif") */
 /* The home page rule must stay LAST, so it wins over the sky rules above. */
 body.home[data-sky]             { --gif: url("cosmic_luxury_animated.gif"); }  /* PASTE YOUR GIF HERE, e.g. url("images/home.gif") */
 
@@ -103,9 +105,28 @@ button:hover { transform: scale(1.06); }
                   background: var(--ink); border-radius: 4px; }
 #locationMsg { margin: 8px 0 0; font-size: .9rem; }
 footer { text-align: center; margin-top: 24px; font-size: .85rem; }
-header nav { max-width: 760px; margin: 0 auto; }
+header nav { max-width: 760px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 /* ===== 12. "USE MY LOCATION" BUTTON =====
    It sits in its own box (.location) with space above it, so it never touches the quick links. */
 .location { margin-top: 20px; text-align: center; clear: both; }
 .location .chip { display: inline-block; }
 #locationMsg { min-height: 1.4em; }   /* keeps space reserved so the page does not jump when a message appears */
+/* ===== 13. TEMPERATURE SELECT ===== */
+select { padding: 14px 16px; font-size: 1.05rem; border: 0; border-radius: 999px; cursor: pointer;
+         box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+header nav select { padding: 10px 14px; font-size: 1rem; background: var(--card); color: var(--ink); box-shadow: none; }
+
+/* ===== 14. ERROR PAGE ===== */
+.error { text-align: center; }
+.error h2 { margin: 8px 0; }
+.error form { margin: 18px 0; }
+.error .chip { display: inline-block; }
+/* The big picture: an emoji that sways like it is searching. A GIF (--error-gif) goes behind it. */
+.error-art { height: 150px; display: flex; align-items: center; justify-content: center; font-size: 5rem;
+             background-image: var(--error-gif, none); background-size: contain;
+             background-repeat: no-repeat; background-position: center; }
+.error-art span { display: inline-block; animation: search 2.5s ease-in-out infinite; }
+@keyframes search {
+  0%, 100% { transform: translateX(-30px) rotate(-12deg); }
+  50%      { transform: translateX(30px) rotate(12deg); }
+}

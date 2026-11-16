@@ -5,6 +5,40 @@
 /* ============ 1. SHORTCUT ============ */
 const $ = id => document.getElementById(id);   // $("temp") is shorter than document.getElementById("temp")
 
+/* ============ 1b. TEMPERATURE UNIT (C, F or K) ============
+   The weather service always sends Celsius. We keep every number in Celsius inside the program
+   and only convert when we SHOW a temperature. The choice is saved in localStorage. */
+function getUnit() {
+  try { return localStorage.getItem("unit") || "C"; }
+  catch (error) { return "C"; }
+}
+function saveUnit(unit) {
+  try { localStorage.setItem("unit", unit); }
+  catch (error) { /* ignore */ }
+}
+
+/* formatTemp(21)        -> "21°C"  or "70°F"  or "294 K"
+   formatTemp(21, true)  -> "21°"   or "70°"   or "294"   (short version for small spaces) */
+function formatTemp(celsius, short) {
+  const unit = getUnit();
+  let value = celsius;
+  if (unit === "F") { value = celsius * 9 / 5 + 32; }
+  if (unit === "K") { value = celsius + 273.15; }
+  value = Math.round(value);
+  if (unit === "K") { return short ? String(value) : value + " K"; }
+  return short ? value + "°" : value + "°" + unit;
+}
+
+/* Connects the <select id="unitSelect"> drop-down. onChange runs after the user picks a unit. */
+function setupUnitSelect(onChange) {
+  const select = $("unitSelect");
+  select.value = getUnit();
+  select.addEventListener("change", function () {
+    saveUnit(select.value);
+    if (onChange) { onChange(); }
+  });
+}
+
 /* ============ 2. TURN A WEATHER CODE INTO TEXT + EMOJI ============
    The weather service sends a number (0 = clear, 61 = rain ...). */
 function describe(code) {
@@ -78,16 +112,16 @@ function writePlace(name, place) {
 }
 
 /* Step A: place name -> latitude/longitude. Tries the names in the list one by one. */
-function findPlace(names, index, callback) {
+function findPlace(names, index, callback, onError) {
   if (index >= names.length) { callback(null); return; }          // nothing found
   const url = "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + names[index].replace(/ /g, "%20");
   fetch(url)
     .then(response => response.json())
     .then(geo => {
       if (geo.results) { callback(geo.results[0]); }
-      else { findPlace(names, index + 1, callback); }             // try the next spelling
+      else { findPlace(names, index + 1, callback, onError); }    // try the next spelling
     })
-    .catch(() => callback(null));
+    .catch(() => onError("network"));                             // the internet failed
 }
 
 /* Step B: latitude/longitude -> weather */
@@ -101,7 +135,7 @@ function loadForecast(place, callback, onError) {
   fetch(url)
     .then(response => response.json())
     .then(data => callback({ place: place, data: data }))
-    .catch(onError);
+    .catch(() => onError("network"));
 }
 
 /* Weather for a typed place name */
@@ -119,10 +153,10 @@ function getWeather(name, callback, onError) {
   if (clean !== capital) { names.push(clean); }                   // second try: exactly as typed
 
   findPlace(names, 0, function (place) {
-    if (!place) { onError(); return; }
+    if (!place) { onError("notfound"); return; }
     writePlace(name, place);
     loadAndSave(name, place, callback, onError);
-  });
+  }, onError);
 }
 
 /* Get the forecast, save it for 10 minutes, then hand it back */
@@ -205,6 +239,7 @@ function formatHour(h, short) {            // 14 -> "2 PM"  (short: "2p")
 let hours = [];                                // today's hourly data
 let scored = [];                               // the same hours, with scores added
 let currentActivity = "Walk";
+let currentResult = null;                      // the last weather we received
 
 function showWeather(place, data) {
   const now = data.current;
@@ -227,9 +262,9 @@ function showWeather(place, data) {
   document.title = "Weather in " + place.name;
   $("placeName").textContent = where;
   $("icon").textContent = info.icon;
-  $("temp").textContent = Math.round(now.temperature_2m) + "°C";
+  $("temp").textContent = formatTemp(now.temperature_2m);
   $("cond").textContent = info.text;
-  $("details").textContent = "Feels like " + Math.round(now.apparent_temperature) + "° · Humidity " +
+  $("details").textContent = "Feels like " + formatTemp(now.apparent_temperature) + " · Humidity " +
     now.relative_humidity_2m + "% · Wind " + Math.round(now.wind_speed_10m) + " km/h";
 
   const nowHourData = hours.find(h => h.hour === localHour);
@@ -239,7 +274,7 @@ function showWeather(place, data) {
   $("days").innerHTML = data.daily.time.map((date, i) => {
     const day = i === 0 ? "Today" : new Date(date + "T12:00:00").toLocaleDateString("en", { weekday: "short" });
     return `<div>${day}<br>${describe(data.daily.weather_code[i]).icon}
-            <b>${Math.round(data.daily.temperature_2m_max[i])}°</b>${Math.round(data.daily.temperature_2m_min[i])}°</div>`;
+            <b>${formatTemp(data.daily.temperature_2m_max[i], true)}</b>${formatTemp(data.daily.temperature_2m_min[i], true)}</div>`;
   }).join("");
 }
 
@@ -266,6 +301,20 @@ function drawPlanner() {
 
 /* ============ 6. RESULTS PAGE ============ */
 function setupResultsPage() {
+  // Changing the unit redraws the numbers (no new internet request needed)
+  setupUnitSelect(function () {
+    if (currentResult) {
+      showWeather(currentResult.place, currentResult.data);
+      drawPlanner();
+    }
+  });
+
+  // "Try again" form on the error page
+  $("retryForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+    goToCity($("retryInput").value);
+  });
+
   Object.keys(ACTIVITIES).forEach(name => {            // make one button per activity
     const b = document.createElement("button");
     b.className = "chip";
@@ -278,7 +327,7 @@ function setupResultsPage() {
     const bar = e.target.closest(".bar");
     if (!bar) return;
     const h = scored[bar.dataset.i];
-    $("picked").textContent = formatHour(h.hour) + ": " + h.temp + "°C, " + h.rain + "% rain, wind " + h.wind + " km/h";
+    $("picked").textContent = formatHour(h.hour) + ": " + formatTemp(h.temp) + ", " + h.rain + "% rain, wind " + h.wind + " km/h";
   });
 
   // Read what the home page saved in sessionStorage, then load the weather
@@ -292,6 +341,7 @@ function setupResultsPage() {
 }
 
 function showEverything(result) {
+  currentResult = result;
   hours = todaysHours(result.data);
   showWeather(result.place, result.data);
   drawPlanner();
@@ -299,8 +349,23 @@ function showEverything(result) {
   $("app").hidden = false;         // show the weather
 }
 
-function showError() {
-  $("message").textContent = "Could not get the weather. Check the spelling and your internet connection, then try again.";
+/* ERROR PAGE: shown when the place is not found or the internet fails.
+   reason is "notfound" or "network" (we sent it from getWeather). */
+function showError(reason) {
+  document.body.dataset.sky = "error";
+  document.title = "Oops - Best Hour";
+  $("message").hidden = true;
+  $("app").hidden = true;
+  $("errorBox").hidden = false;
+
+  if (reason === "network") {
+    $("errorTitle").textContent = "Oops, connection problem";
+    $("errorText").textContent = "We could not reach the weather service. Check your internet and try again.";
+  } else {
+    const typed = sessionStorage.getItem("city") || "";
+    $("errorTitle").textContent = "Sorry, we couldn't find that place";
+    $("errorText").textContent = "We found nothing for \"" + typed + "\". Check the spelling or try a bigger city nearby.";
+  }
 }
 
 /* ============ 7. HOME PAGE ============ */
@@ -331,6 +396,7 @@ function useMyLocation() {
 }
 
 function setupHomePage() {
+  setupUnitSelect();   // remember the unit for the results page
   const input = document.querySelector("input[name=city]");
 
   $("searchForm").addEventListener("submit", function (event) {

@@ -12,12 +12,29 @@
   <header>
     <nav>
       <a class="back" href="index.html"><span class="arrow">←</span> Search another place</a>
+      <select id="unitSelect" aria-label="Temperature unit">
+        <option value="C">°C Celsius</option>
+        <option value="F">°F Fahrenheit</option>
+        <option value="K">K Kelvin</option>
+      </select>
     </nav>
   </header>
 
   <main>
     <!-- Shows "Loading..." or an error. results.js fills it in. -->
     <p class="card" id="message">Loading weather...</p>
+
+    <!-- ERROR PAGE: hidden until a place is not found (results.js shows it) -->
+    <section class="card error" id="errorBox" hidden>
+      <div class="error-art"><span>🔍</span></div>   <!-- delete this span if you use your own GIF -->
+      <h2 id="errorTitle"></h2>
+      <p id="errorText"></p>
+      <form id="retryForm">
+        <input type="text" id="retryInput" placeholder="Try another place" required>
+        <button type="submit">Try again</button>
+      </form>
+      <a class="chip" href="index.html">← Back to home</a>
+    </section>
 
     <!-- Everything inside #app is hidden until the data arrives -->
     <div id="app" hidden>
