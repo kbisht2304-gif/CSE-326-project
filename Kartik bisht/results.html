@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Weather - Best Hour</title>
   <meta name="description" content="Current weather, the best hour for your plan, and a 5-day forecast.">
+  <link rel="preconnect" href="https://geocoding-api.open-meteo.com">
+  <link rel="preconnect" href="https://api.open-meteo.com">
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body data-sky="sunny">
+<!-- data-sky="loading": plain colors, no heavy GIF, until the weather arrives -->
+<body data-sky="loading">
   <header>
     <nav>
       <a class="back" href="index.html"><span class="arrow">←</span> Search another place</a>
@@ -22,13 +25,14 @@
 
   <main>
     <!-- Shows "Loading..." or an error. results.js fills it in. -->
-    <p class="card" id="message">Loading weather...</p>
+    <p class="card" id="message"><span class="spinner"></span> <span id="loadingText">Loading weather...</span></p>
 
     <!-- ERROR PAGE: hidden until a place is not found (results.js shows it) -->
     <section class="card error" id="errorBox" hidden>
       <div class="error-art"><span>🔍</span></div>   <!-- delete this span if you use your own GIF -->
       <h2 id="errorTitle"></h2>
       <p id="errorText"></p>
+      <p id="errorDetail" class="detail"></p>
       <form id="retryForm">
         <input type="text" id="retryInput" placeholder="Try another place" required>
         <button type="submit">Try again</button>

@@ -111,17 +111,76 @@ function writePlace(name, place) {
   catch (error) { /* ignore */ }
 }
 
+/* Popular places we already know. No lookup needed, so these load with ONE internet request, not two. */
+const KNOWN_PLACES = {
+  "delhi":     { name: "Delhi",     admin1: "Delhi",          country: "India",          latitude: 28.6519,  longitude: 77.2315 },
+  "mumbai":    { name: "Mumbai",    admin1: "Maharashtra",    country: "India",          latitude: 19.0728,  longitude: 72.8826 },
+  "bengaluru": { name: "Bengaluru", admin1: "Karnataka",      country: "India",          latitude: 12.9719,  longitude: 77.5937 },
+  "kolkata":   { name: "Kolkata",   admin1: "West Bengal",    country: "India",          latitude: 22.5626,  longitude: 88.3630 },
+  "chennai":   { name: "Chennai",   admin1: "Tamil Nadu",     country: "India",          latitude: 13.0878,  longitude: 80.2785 },
+  "hyderabad": { name: "Hyderabad", admin1: "Telangana",      country: "India",          latitude: 17.3840,  longitude: 78.4564 },
+  "punjab":    { name: "Punjab",    admin1: "",               country: "India",          latitude: 30.95,    longitude: 75.5 },
+  "tokyo":     { name: "Tokyo",     admin1: "Tokyo",          country: "Japan",          latitude: 35.6895,  longitude: 139.6917 },
+  "london":    { name: "London",    admin1: "England",        country: "United Kingdom", latitude: 51.5085,  longitude: -0.1257 },
+  "paris":     { name: "Paris",     admin1: "Île-de-France",  country: "France",         latitude: 48.8534,  longitude: 2.3488 },
+  "new york":  { name: "New York",  admin1: "New York",       country: "United States",  latitude: 40.7143,  longitude: -74.0060 },
+  "dubai":     { name: "Dubai",     admin1: "Dubai",          country: "United Arab Emirates", latitude: 25.0772, longitude: 55.3093 },
+  "sydney":    { name: "Sydney",    admin1: "New South Wales", country: "Australia",     latitude: -33.8679, longitude: 151.2073 },
+  "singapore": { name: "Singapore", admin1: "",               country: "Singapore",      latitude: 1.2897,   longitude: 103.8501 },
+  "brazil":    { name: "Brazil",    admin1: "",               country: "Brazil",         latitude: -10,      longitude: -55 },
+  "reykjavik": { name: "Reykjavik", admin1: "Capital Region", country: "Iceland",        latitude: 64.1355,  longitude: -21.8954 }
+};
+
+/* getJSON: asks the internet and handles EVERY way it can go wrong.
+   - timeout: no answer after 8 seconds -> stop waiting (no more endless "buffering")
+   - retry:   if it failed because of the connection or the server, try ONE more time automatically
+   onError gets a short text such as "network", "timeout", "HTTP 429" so we can tell the user the real problem. */
+function getJSON(url, onSuccess, onError, triesLeft) {
+  if (triesLeft === undefined) { triesLeft = 2; }
+  let finished = false;                     // becomes true when this try is over (answer, error or timeout)
+  let timer = null;
+
+  function fail(reason) {
+    if (finished) { return; }
+    finished = true;
+    clearTimeout(timer);
+    const canRetry = reason === "network" || reason === "timeout" || reason.indexOf("HTTP 5") === 0;
+    if (canRetry && triesLeft > 1) { getJSON(url, onSuccess, onError, triesLeft - 1); }
+    else { onError(reason); }
+  }
+  function succeed(data) {
+    if (finished) { return; }
+    finished = true;
+    clearTimeout(timer);
+    try { onSuccess(data); }
+    catch (error) { onError("code: " + error.message); }   // a bug in OUR code is not an internet problem
+  }
+
+  timer = setTimeout(function () { fail("timeout"); }, 8000);
+
+  fetch(url).then(
+    function (response) {
+      if (!response.ok) { fail("HTTP " + response.status); return; }   // for example 429 = too many requests
+      response.json().then(
+        function (data) {
+          if (data.error) { fail("API: " + data.reason); return; }
+          succeed(data);
+        },
+        function () { fail("bad answer"); }
+      );
+    },
+    function () { fail("network"); }       // fetch itself failed: no connection, blocked, or DNS problem
+  );
+}
+
 /* Step A: place name -> latitude/longitude. Tries the names in the list one by one. */
 function findPlace(names, index, callback, onError) {
   if (index >= names.length) { callback(null); return; }          // nothing found
   const url = "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + names[index].replace(/ /g, "%20");
-  fetch(url)
-    .then(response => response.json())
-    .then(geo => {
-      if (geo.results) { callback(geo.results[0]); }
-      else { findPlace(names, index + 1, callback, onError); }    // try the next spelling
-    })
-    .catch(() => onError("network"));                             // the internet failed
+  getJSON(url, function (geo) {
+    if (geo.results) { callback(geo.results[0]); }
+    else { findPlace(names, index + 1, callback, onError); }      // try the next spelling
+  }, onError);
 }
 
 /* Step B: latitude/longitude -> weather */
@@ -132,16 +191,20 @@ function loadForecast(place, callback, onError) {
     "&hourly=temperature_2m,precipitation_probability,wind_speed_10m" +
     "&daily=weather_code,temperature_2m_max,temperature_2m_min" +
     "&forecast_days=5&timezone=auto";
-  fetch(url)
-    .then(response => response.json())
-    .then(data => callback({ place: place, data: data }))
-    .catch(() => onError("network"));
+  getJSON(url, function (data) {
+    if (!data.current || !data.hourly || !data.daily) { onError("API: incomplete answer"); return; }
+    callback({ place: place, data: data });
+  }, onError);
 }
 
 /* Weather for a typed place name */
 function getWeather(name, callback, onError) {
   const cached = readCache(name);
   if (cached) { callback(cached); return; }                       // instant!
+
+  // A popular place from our own list? Then no lookup is needed at all.
+  const preset = KNOWN_PLACES[cleanName(name).toLowerCase()];
+  if (preset) { loadAndSave(name, preset, callback, onError); return; }
 
   // Already know where this place is? Skip the first trip to the internet.
   const knownPlace = readPlace(name);
@@ -172,13 +235,6 @@ function getWeatherByCoords(lat, lon, callback, onError) {
   loadForecast({ name: "Your location", latitude: lat, longitude: lon }, callback, onError);
 }
 
-/* Start loading early, so the answer is waiting when the user presses Search */
-function prefetchWeather(name) {
-  if (cleanName(name).length >= 3 && !readCache(name)) {
-    getWeather(name, function () {}, function () {});
-  }
-}
-
 /* Keep only today's hours between 6 AM and 10 PM (in that place's own time). */
 function todaysHours(data) {
   const today = data.current.time.slice(0, 10);   // e.g. "2026-10-27"
@@ -205,7 +261,7 @@ const ACTIVITIES = {
   "Run":     { ideal: [10, 22], rainHate: 0.6, windHate: 0.4, golden: false },
   "Picnic":  { ideal: [20, 30], rainHate: 1.2, windHate: 1.0, golden: false },
   "Photos":  { ideal: [10, 32], rainHate: 0.7, windHate: 0.3, golden: true },
-  "Cricket": { ideal: [18, 32], rainHate: 1.5, windHate: 0.6, golden: false }
+  "Sports": { ideal: [18, 32], rainHate: 1.5, windHate: 0.6, golden: false }
 };
 
 function score(h, act) {
@@ -336,7 +392,7 @@ function setupResultsPage() {
   const city = sessionStorage.getItem("city");
 
   if (lat && lon) { getWeatherByCoords(lat, lon, showEverything, showError); }
-  else if (city)  { getWeather(city, showEverything, showError); }
+  else if (city)  { $("loadingText").textContent = "Looking up " + city + "..."; getWeather(city, showEverything, showError); }
   else { $("message").textContent = "No place was given. Go back and search for a place."; }
 }
 
@@ -349,22 +405,34 @@ function showEverything(result) {
   $("app").hidden = false;         // show the weather
 }
 
-/* ERROR PAGE: shown when the place is not found or the internet fails.
-   reason is "notfound" or "network" (we sent it from getWeather). */
+/* ERROR PAGE: shown when something goes wrong. reason is a short text from getJSON / getWeather:
+   "notfound", "network", "timeout", "HTTP 429", "API: ...", "code: ..." */
 function showError(reason) {
   document.body.dataset.sky = "error";
   document.title = "Oops - Best Hour";
   $("message").hidden = true;
   $("app").hidden = true;
   $("errorBox").hidden = false;
+  $("errorDetail").textContent = "";
 
-  if (reason === "network") {
-    $("errorTitle").textContent = "Oops, connection problem";
-    $("errorText").textContent = "We could not reach the weather service. Check your internet and try again.";
-  } else {
-    const typed = sessionStorage.getItem("city") || "";
+  const typed = sessionStorage.getItem("city") || "";
+  $("retryInput").value = reason === "notfound" ? "" : typed;     // for other problems keep the place, so one click retries
+
+  if (reason === "notfound") {
     $("errorTitle").textContent = "Sorry, we couldn't find that place";
     $("errorText").textContent = "We found nothing for \"" + typed + "\". Check the spelling or try a bigger city nearby.";
+  } else if (reason === "network" || reason === "timeout") {
+    $("errorTitle").textContent = "The weather service is not answering";
+    $("errorText").textContent = "Your Wi-Fi may be fine, but the request did not get through. Wait a moment and press Try again.";
+    $("errorDetail").textContent = "Technical detail: " + reason;
+  } else if (reason === "HTTP 429") {
+    $("errorTitle").textContent = "The weather service is busy";
+    $("errorText").textContent = "Too many requests came from this network. Wait a minute, then press Try again.";
+    $("errorDetail").textContent = "Technical detail: " + reason;
+  } else {
+    $("errorTitle").textContent = "Something went wrong";
+    $("errorText").textContent = "We got an answer we could not use. Press Try again.";
+    $("errorDetail").textContent = "Technical detail: " + reason;
   }
 }
 
@@ -404,12 +472,8 @@ function setupHomePage() {
     goToCity(input.value);
   });
 
-  input.addEventListener("change", function () { prefetchWeather(input.value); });   // head start
 
   document.querySelectorAll("nav .chip").forEach(chip => {
-    chip.addEventListener("mouseenter", () => prefetchWeather(chip.textContent));   // head start (mouse)
-    chip.addEventListener("focus", () => prefetchWeather(chip.textContent));        // head start (keyboard)
-    chip.addEventListener("touchstart", () => prefetchWeather(chip.textContent));   // head start (phone)
     chip.addEventListener("click", event => {
       event.preventDefault();
       goToCity(chip.textContent);

@@ -7,6 +7,7 @@ body[data-sky="rainy"]  { --bg1:#6f8fb3; --bg2:#34495e; --ink:#f2f6fa; --card:rg
 body[data-sky="winter"] { --bg1:#e3f4ff; --bg2:#7fb6e6; --ink:#0f2a43; --card:rgba(255,255,255,.6); }  /* icy blue */
 body[data-sky="night"]  { --bg1:#27305c; --bg2:#0e1230; --ink:#eef0ff; --card:rgba(255,255,255,.15); }
 body[data-sky="error"]  { --bg1:#ece6fa; --bg2:#a495cf; --ink:#2a2140; --card:rgba(255,255,255,.65); }  /* soft purple */
+body[data-sky="loading"] { --bg1:#e6eef8; --bg2:#b9c8de; --ink:#1c2530; --gif: none; }  /* shown only while the weather loads */
 
 /* ===== 2. BACKGROUND GIFS (YOUR PART) =====
    Each sky has a "--gif" line below. To add an animated background:
@@ -130,3 +131,10 @@ header nav select { padding: 10px 14px; font-size: 1rem; background: var(--card)
   0%, 100% { transform: translateX(-30px) rotate(-12deg); }
   50%      { transform: translateX(30px) rotate(12deg); }
 }
+
+/* ===== 15. LOADING SPINNER ===== */
+.spinner { display: inline-block; width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;
+           border: 3px solid var(--ink); border-top-color: transparent; border-radius: 50%;
+           animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.detail { font-size: .8rem; opacity: .7; }
