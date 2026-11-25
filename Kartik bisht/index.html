@@ -9,15 +9,13 @@
   <link rel="preconnect" href="https://api.open-meteo.com">
   <link rel="stylesheet" href="style.css">
 </head>
-<!-- hallo -->
-<!-- class="home" tells the CSS and the JavaScript that this is the home page -->
+
 <body class="home" data-sky="sunny">
 
-  <!-- BACKGROUND VIDEO: put your video at images/home.mp4 (plays silently on a loop) -->
   <video class="bg-video" autoplay muted loop>
     <source src="images/home.mp4" type="video/mp4">
   </video>
-  <div class="video-overlay"></div>   <!-- a light dark layer so the text is easy to read -->
+  <div class="video-overlay"></div>   
 
   <main>
     <section class="hero">
@@ -27,7 +25,7 @@
         <p>Don't just check the weather. Find the best time for your plan.</p>
       </header>
 
-      <!-- No "action" here: results.js saves the place and opens results.html -->
+      
       <form id="searchForm">
         <input type="text" name="city" placeholder="Search a city, state or country" required>
         <select id="unitSelect" aria-label="Temperature unit">
@@ -38,7 +36,6 @@
         <button type="submit">Search</button>
       </form>
 
-      <!-- Quick links (navigation) -->
       <nav class="chips">
         <a class="chip" href="results.html">Delhi</a>
         <a class="chip" href="results.html">Tokyo</a>
@@ -48,7 +45,6 @@
         <a class="chip" href="results.html">Reykjavik</a>
       </nav>
 
-      <!-- Geolocation API: uses the device's location -->
       <div class="location">
         <button type="button" class="chip" id="locationBtn">📍 Use my location</button>
         <p id="locationMsg"></p>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather - Best Hour</title>
+  <meta name="description" content="Current weather, the best hour for your plan, and a 5-day forecast.">
+  <link rel="preconnect" href="https://geocoding-api.open-meteo.com">
+  <link rel="preconnect" href="https://api.open-meteo.com">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body data-sky="loading">
+  <header>
+    <nav>
+      <a class="back" href="index.html"><span class="arrow">←</span> Search another place</a>
+      <select id="unitSelect" aria-label="Temperature unit">
+        <option value="C">°C Celsius</option>
+        <option value="F">°F Fahrenheit</option>
+        <option value="K">K Kelvin</option>
+      </select>
+    </nav>
+  </header>
+
+  <main>
+    <p class="card" id="message"><span class="spinner"></span> <span id="loadingText">Loading weather...</span></p>
+
+    <section class="card error" id="errorBox" hidden>
+      <div class="error-art"><span>🔍</span></div>   
+      <h2 id="errorTitle"></h2>
+      <p id="errorText"></p>
+      <p id="errorDetail" class="detail"></p>
+      <form id="retryForm">
+        <input type="text" id="retryInput" placeholder="Try another place" required>
+        <button type="submit">Try again</button>
+      </form>
+      <a class="chip" href="index.html">← Back to home</a>
+    </section>
+
+    <div id="app" hidden>
+
+      <section class="card now">
+        <div>
+          <h1 id="placeName"></h1>
+          <div class="temp"><span id="icon"></span> <span id="temp"></span></div>
+          <p id="cond"></p>
+          <p id="details"></p>
+        </div>
+        <p class="outfit" id="outfit"></p>
+      </section>
+
+      <section class="card">
+        <h2>What are you planning today?</h2>
+        <div class="chips" id="chips"></div>
+        <p class="verdict" id="verdict"></p>
+        <div class="bars" id="bars"></div>
+        <div class="hours" id="hours"></div>
+        <p id="picked">Tap a bar to see that hour.</p>
+      </section>
+
+      <section class="card">
+        <h2>Next 5 days</h2>
+        <div class="days" id="days"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>Internet Programming project</footer>
+
+  <script src="results.js"></script>
+</body>
+</html>
