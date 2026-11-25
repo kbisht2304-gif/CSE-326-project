@@ -64,7 +64,7 @@ The free weather service limits how many requests one network can send. If it is
 
 ## Team Arc Track
 
-| Name | Registration number | Contribution |
+| Name | Contribution |
 |---|---|---|
 | Kartik Bisht | Front end (HTML, CSS), GitHub repository, deployment and README |
 | Bhartendu Sharma| Weather data and networking, caching, location |
